@@ -7,7 +7,7 @@ import matplotlib.pyplot as plt
 def f(x):
     return np.array([1,x[0],x[1],x[0] * x[1],x[0] * x[0],x[1] * x[1]])
     
-def Make_M(x_arr,p_arr,n,m):
+def Make_M(x_arr,p_arr,m):
     M = np.zeros((m,m))
     for k in range(len(x_arr)):
         _f = f(x_arr[k])
@@ -22,9 +22,9 @@ def Make_points(n,X):
     return [ random.choice(X) for i in range(n)]
 
 def Gradient(X,P):
-    n = 6
-    M = Make_M(X,P,len(X),n)
-    tt = np.linalg.inv(M)**2
+    M = Make_M(X,P,6)
+    tt = np.linalg.inv(M**2)
+    #tt = Make_D(M)
     gradient = []
     for i in X:
         _f = f(i)
@@ -34,27 +34,56 @@ def Gradient(X,P):
 
 def Calc_Phi(M,x):
     _f = f(x)
-    tt = np.linalg.inv(M)**2
+    tt = np.linalg.inv(M**2)
+    #tt = Make_D(M)
     return  _f.T@(tt)@_f
 
 def Calc_Crit_A(D):
     return  -1*D.trace()
+    #return np.linalg.det(D)
 
+def Write_file(X,filename):
+    file = open(filename,'w')
+    for i in X:
+        file.write(str(i[0]) + '\t' + str(i[1])+'\n')
+    file.close()
+
+
+def Read_File(filename):
+    file = open(filename,'r')
+    X = []
+    for str in file:
+        point = str.replace('\n','').split('\t')
+        X.append((float(point[0]),float(point[1])))
+    file.close()
+    return X    
 
 n = 20
 X = []
 P = [1/n]*n
 grid_1 = np.linspace(-1,1,11)
+#grid_1 = np.linspace(-1,1,21)
 grid = []
 for i in grid_1:
     for j in grid_1:
         grid.append((i,j))
 
-X = Make_points(n,grid)
+
+#X = Make_points(n,grid)
+#Write_file(X,'points.txt')
+X = Read_File('points_10x10_20.txt')
 
 print('Plan un')
 for i in range(n):
     print(str(X[i][0])+'\t'+ str(X[i][1]) +'\t' +str(P[i]))
+
+plot_x = []
+plot_y = []
+for i in X:
+    plot_x.append(i[0])
+    plot_y.append(i[1])
+plt.plot(plot_x, plot_y,'o')
+plt.show()
 
 
 s = 0
@@ -62,11 +91,17 @@ flag = True
 add_plan = []
 flags_grid = [True]*len(grid_1)**2
 flags_gradient = [True]*n 
+
+
+M_i = Make_M(X,P,6)
+D_i = Make_D(M_i)
+print('s = {} i_com = {} crit_a = {}'.format(0,0,Calc_Crit_A(D_i)))
 while flag:
     grad = Gradient(X,P)
     i_com = 0
+
     while True:
-        M_i = Make_M(X,P,n,6)
+        M_i = Make_M(X,P,6)
         D_i = Make_D(M_i)
         A_i = Calc_Crit_A(D_i)
         all_phi  = [Calc_Phi(M_i,i) for i in grid]
@@ -108,7 +143,7 @@ while flag:
         #X[np.argmin(grad)] = x_max
 
         X[index_min] = point_max
-        M_i_1 = Make_M(X,P,n,6)
+        M_i_1 = Make_M(X,P,6)
         D_i_1 = Make_D(M_i_1)
         A_i_1 = Calc_Crit_A(D_i_1) 
             
@@ -117,14 +152,17 @@ while flag:
             i_com+=1
             flags_grid[index_max] = False
             flags_gradient[index_min] = False
+            print('s = {} i_com = {} crit_a = {}'.format(s,i_com,A_i_1))
             #grid.remove(x_max) 
             #add_plan.append(x_max)
            # X.remove(x_max)
             #P.pop()
         elif i_com == 0:
+            print('s = {} i_com = {} crit_a_i = {} crit_a_i_1 = {}'.format(s,i_com,A_i,A_i_1))
             flag = False
             break
         else:
+            print('s = {} i_com = {} crit_a = {}'.format(s,i_com,A_i))
             s= s+1
             break
 
@@ -139,3 +177,11 @@ while flag:
 print('Plan after')
 for i in range(len(X)):
     print(str(X[i][0])+'\t'+ str(X[i][1]) +'\t' +str(P[i]))
+
+plot_x = []
+plot_y = []
+for i in X:
+    plot_x.append(i[0])
+    plot_y.append(i[1])
+plt.plot(plot_x, plot_y,'o')
+plt.show()
